@@ -1,0 +1,10 @@
+.gradle/
+build/
+.idea/
+.vscode/
+.DS_Store
+*.log
+.env
+.env.*
+# dev properties not needed in Docker image
+src/main/resources/application-dev.properties
