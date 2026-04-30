@@ -19,7 +19,7 @@ public final class PaymentTestFixtures {
     public static final String STRIPE_CUS_ID = "cus_test_456";
 
     public static final AuthenticatedUser manager = new AuthenticatedUser(
-            USER_ID, COMPANY_ID, "manager@grainflow.com", "MANAGER"
+            USER_ID, COMPANY_ID, "manager@grainflow.com", "MANAGER",true,"ACTIVE"
     );
 
     public static Subscription activeSubscription() {

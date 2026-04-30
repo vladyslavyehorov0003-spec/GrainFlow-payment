@@ -9,5 +9,6 @@ public record ValidateResponse(
         UUID companyId,
         String email,
         String role,
-        String subscriptionStatus
+        String subscriptionStatus,
+        boolean companyVerified
 ) {}

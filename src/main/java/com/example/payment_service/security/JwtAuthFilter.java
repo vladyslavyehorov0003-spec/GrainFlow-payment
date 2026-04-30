@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -14,8 +15,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+@Deprecated(forRemoval = true)
 @Slf4j
 @Component
+@ConditionalOnProperty(name = "auth.filter", havingValue = "jwt")
 @RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {
 
@@ -43,13 +46,25 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
+        if (!validated.companyVerified()) {
+            String method = request.getMethod();
+            if (method.equals("POST") || method.equals("PUT") ||
+                    method.equals("DELETE") || method.equals("PATCH")) {
+                log.warn("Company not verified, blocking mutating request: {} {}", method, request.getRequestURI());
+                writePaymentRequired(response, "Company email not verified");
+                return;
+            }
+        }
+
         // Token is valid — build principal and set SecurityContext
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
             AuthenticatedUser principal = new AuthenticatedUser(
                     validated.userId(),
                     validated.companyId(),
                     validated.email(),
-                    validated.role()
+                    validated.role(),
+                    validated.valid(),
+                    validated.subscriptionStatus()
             );
             log.debug("Authenticated user: email={}, role={}, authorities={}",
                     principal.email(), principal.role(), principal.getAuthorities());
@@ -65,6 +80,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private void writePaymentRequired(HttpServletResponse response, String message) throws IOException {
+        response.setStatus(HttpServletResponse.SC_PAYMENT_REQUIRED);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().write(
+                "{\"status\":\"error\",\"message\":\"" + message + "\",\"data\":null}"
+        );
     }
 
     private void writeUnauthorized(HttpServletResponse response, String message) throws IOException {

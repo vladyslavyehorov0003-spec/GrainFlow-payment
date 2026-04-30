@@ -14,7 +14,9 @@ public record AuthenticatedUser(
         UUID userId,
         UUID companyId,
         String email,
-        String role
+        String role,
+        boolean companyVerified,
+        String subscriptionStatus
 ) implements UserDetails {
 
     @Override
@@ -23,6 +25,6 @@ public record AuthenticatedUser(
     }
 
     @Override public String getPassword()   { return null; }
-    @Override public String getUsername()   { return email; }
+    @Override public String getUsername()   { return email != null ? email : userId.toString(); }
     @Override public boolean isEnabled()    { return true; }
 }
