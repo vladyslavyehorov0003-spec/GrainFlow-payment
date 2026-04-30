@@ -57,6 +57,7 @@ public class PaymentService {
         return session.getUrl();
     }
 
+    @Transactional
     public void handleWebhook(String payload, String sigHeader) throws StripeException {
         Event event;
         try {
@@ -105,6 +106,10 @@ public class PaymentService {
                         .status(SubscriptionStatus.ACTIVE)
                         .build();
 
+        if (subscriptionRepository.findByStripeSubscriptionId(stripeSubscriptionId).isPresent()) {
+            log.info("Subscription already exists, skipping (idempotent): {}", stripeSubscriptionId);
+            return;
+        }
         subscriptionRepository.save(subscription);
         log.info("Subscription saved to DB: companyId={}", companyId);
         eventProducer.publish(companyId, SubscriptionStatus.ACTIVE.name());
