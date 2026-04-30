@@ -82,10 +82,6 @@ public class HeaderAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        if (!"ACTIVE".equals(subscriptionStatus) && mutating) {
-            writePaymentRequired(response, "Subscription required");
-            return;
-        }
 
         // ── Build SecurityContext ─────────────────────────────────────────────
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
