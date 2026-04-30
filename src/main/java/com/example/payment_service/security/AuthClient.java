@@ -44,7 +44,7 @@ public class AuthClient {
     }
 
     private ValidateResponse invalid() {
-        return new ValidateResponse(false, null, null, null, null,null);
+        return new ValidateResponse(false, null, null, null, null,null,false);
     }
 
     // Unwraps ApiResponse<ValidateTokenResponse> returned by auth-service

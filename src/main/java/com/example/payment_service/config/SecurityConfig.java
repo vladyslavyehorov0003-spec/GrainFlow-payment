@@ -1,6 +1,7 @@
 package com.example.payment_service.config;
 
 
+import com.example.payment_service.security.HeaderAuthFilter;
 import com.example.payment_service.security.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -12,6 +13,9 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.util.Optional;
 
 @Configuration
 @EnableWebSecurity
@@ -19,10 +23,17 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthFilter jwtAuthFilter;
+    private final Optional<JwtAuthFilter> jwtAuthFilter;
+    private final Optional<HeaderAuthFilter> headerAuthFilter;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        OncePerRequestFilter activeAuthFilter = headerAuthFilter
+                .map(f -> (OncePerRequestFilter) f)
+                .or(() -> jwtAuthFilter.map(f -> (OncePerRequestFilter) f))
+                .orElseThrow(() -> new IllegalStateException(
+                        "No auth filter configured. Set auth.filter=header (recommended) or auth.filter=jwt."
+                ));
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session ->
@@ -33,7 +44,7 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health").permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(activeAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
